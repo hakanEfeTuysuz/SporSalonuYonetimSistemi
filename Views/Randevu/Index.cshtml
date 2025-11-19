@@ -1,0 +1,87 @@
+﻿@model IEnumerable<SporSalonuYonetimSistemi.Models.Randevu>
+
+@{
+    ViewData["Title"] = "Randevu Listesi";
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>@(isAdmin ? "Tüm Randevular (Yönetim)" : "Randevularım")</h2>
+
+        @if (!isAdmin)
+        {
+                <a asp-action="Olustur" class="btn btn-primary">📅 Yeni Randevu Al</a>
+        }
+    </div>
+
+    <table class="table table-hover table-bordered shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Tarih</th>
+                <th>Antrenör</th>
+                <th>Hizmet</th>
+                @if (isAdmin)
+                {
+                    <th>Üye (Öğrenci)</th>
+                }
+                <th>Durum</th>
+                @if (isAdmin)
+                {
+                    <th style="width: 200px;">İşlemler</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                    <tr>
+                        <td>@item.RandevuTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@item.Antrenor?.Ad @item.Antrenor?.Soyad</td>
+                        <td>@item.Hizmet?.Ad</td>
+
+                    @if (isAdmin)
+                    {
+                        <td>@item.Uye?.UserName</td>
+                    }
+
+                        <td>
+                        @if (item.OnaylandiMi)
+                        {
+                                    <span class="badge bg-success">Onaylandı</span>
+                        }
+                        else
+                        {
+                                    <span class="badge bg-warning text-dark">Onay Bekliyor</span>
+                        }
+                        </td>
+
+                    @if (isAdmin)
+                    {
+                                <td>
+                                    <div class="d-flex gap-2">
+                                @if (!item.OnaylandiMi)
+                                {
+                                                <form asp-action="Onayla" method="post">
+                                                    <input type="hidden" name="id" value="@item.RandevuId" />
+                                                    <button type="submit" class="btn btn-sm btn-success">✅ Onayla</button>
+                                                </form>
+                                }
+
+                                        <form asp-action="Reddet" method="post" onsubmit="return confirm('Bu randevuyu reddetmek (silmek) istediğinize emin misiniz?');">
+                                            <input type="hidden" name="id" value="@item.RandevuId" />
+                                            <button type="submit" class="btn btn-sm btn-danger">❌ Reddet</button>
+                                        </form>
+                                    </div>
+                                </td>
+                    }
+                    </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!Model.Any())
+    {
+            <div class="alert alert-info">Listelenecek randevu bulunamadı.</div>
+    }
+</div>

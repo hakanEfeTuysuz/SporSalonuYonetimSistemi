@@ -1,0 +1,44 @@
+﻿@model SporSalonuYonetimSistemi.Models.Randevu
+
+@{
+    ViewData["Title"] = "Randevu Al";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Yeni Randevu Oluştur</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Olustur">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tarih ve Saat Seçin</label>
+                            <input asp-for="RandevuTarihi" class="form-control" type="datetime-local" 
+                                   min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                            <span asp-validation-for="RandevuTarihi" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Antrenör Seçin</label>
+                            <select asp-for="AntrenorId" class="form-select" asp-items="ViewBag.AntrenorId"></select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Hizmet Seçin</label>
+                            <select asp-for="HizmetId" class="form-select" asp-items="ViewBag.HizmetId"></select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <input type="submit" value="Randevuyu Onayla" class="btn btn-success btn-lg" />
+                            <a asp-action="Index" class="btn btn-secondary">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

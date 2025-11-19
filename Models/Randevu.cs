@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity; // Bunu ekle (IdentityUser için)
 
 namespace SporSalonuYonetimSistemi.Models
 {
-	public class Randevu
+    [Authorize(Roles = "Uye,Admin")]
+    public class Randevu
 	{
 		[Key]
 		public int RandevuId { get; set; }
