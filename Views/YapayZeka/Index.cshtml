@@ -1,0 +1,71 @@
+﻿@{
+    ViewData["Title"] = "AI Spor Danışmanı";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow border-0">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">🤖 AI Danışman</h4>
+                </div>
+                <div class="card-body bg-light">
+                    <p class="text-muted">Bilgilerinizi girin, yapay zeka size özel program hazırlasın.</p>
+
+                    <form asp-action="TavsiyeAl" method="post">
+                        <div class="mb-3">
+                            <label class="fw-bold">Cinsiyet</label>
+                            <select name="cinsiyet" class="form-select">
+                                <option value="Erkek">Erkek</option>
+                                <option value="Kadın">Kadın</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold">Boy (cm)</label>
+                            <input type="number" name="boy" class="form-control" placeholder="Örn: 180" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold">Kilo (kg)</label>
+                            <input type="number" name="kilo" class="form-control" placeholder="Örn: 75" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold">Hedefiniz</label>
+                            <select name="hedef" class="form-select">
+                                <option value="Kilo Vermek">Kilo Vermek / Yağ Yakmak</option>
+                                <option value="Kas Yapmak">Kas Kütlesi Kazanmak</option>
+                                <option value="Fit Kalmak">Formumu Korumak / Fit Kalmak</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-info w-100 text-white fw-bold">
+                            ✨ Tavsiye İste
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            @if (ViewBag.Cevap != null)
+            {
+                    <div class="card shadow border-0 h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">📋 Size Özel Plan</h5>
+                        </div>
+                        <div class="card-body">
+                        @Html.Raw(ViewBag.Cevap)
+                        </div>
+                    </div>
+            }
+            else
+            {
+                    <div class="alert alert-secondary h-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <h3>👈 Formu Doldurun</h3>
+                            <p>Yapay zeka koçunuz sizi bekliyor.</p>
+                        </div>
+                    </div>
+            }
+        </div>
+    </div>
+</div>

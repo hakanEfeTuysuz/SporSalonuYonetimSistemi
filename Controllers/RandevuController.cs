@@ -59,6 +59,14 @@ namespace SporSalonuYonetimSistemi.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             randevu.UyeId = userId;
             randevu.OnaylandiMi = false;
+            // --- MESAİ SAATİ KONTROLÜ ---
+            // Sabah 09:00'dan önce veya Akşam 22:00'den sonraya izin verme
+            if (randevu.RandevuTarihi.Hour < 9 || randevu.RandevuTarihi.Hour >= 22)
+            {
+                ModelState.AddModelError("RandevuTarihi", "Spor salonumuz 09:00 - 22:00 saatleri arasında hizmet vermektedir.");
+                DropdownlariDoldur(randevu);
+                return View(randevu);
+            }
 
             // --- YENİ EKLENEN TARİH KONTROLÜ ---
             // Eğer tarih seçilmediyse (0001) veya geçmiş bir tarihse hata ver
@@ -134,5 +142,24 @@ namespace SporSalonuYonetimSistemi.Controllers
             ViewData["AntrenorId"] = new SelectList(_context.Antrenorler, "AntrenorId", "Ad", randevu.AntrenorId);
             ViewData["HizmetId"] = new SelectList(_context.Hizmetler, "HizmetId", "Ad", randevu.HizmetId);
         }
+        // --- YENİ EKLENEN: AJAX İÇİN FİLTRELEME METODU ---
+        [HttpGet]
+        public async Task<IActionResult> GetUygunAntrenorler(int hizmetId)
+        {
+            // 1. Bu hizmeti verebilen hocaların ID'lerini bul
+            var uygunIdler = await _context.AntrenorHizmetleri
+                .Where(ah => ah.HizmetId == hizmetId)
+                .Select(ah => ah.AntrenorId)
+                .ToListAsync();
+
+            // 2. O hocaların isimlerini getir
+            var antrenorler = await _context.Antrenorler
+                .Where(a => uygunIdler.Contains(a.AntrenorId))
+                .Select(a => new { value = a.AntrenorId, text = a.Ad + " " + a.Soyad })
+                .ToListAsync();
+
+            return Json(antrenorler);
+        }
+
     }
 }

@@ -1,0 +1,59 @@
+﻿@{
+    ViewData["Title"] = "Antrenör Raporu";
+}
+
+<div class="container mt-5">
+    <h2>📊 Antrenör Performans Raporu (API Bağlantılı)</h2>
+    <p>Aşağıdaki butona tıkladığınızda, veriler <strong>REST API</strong> üzerinden canlı olarak çekilecektir.</p>
+
+    <button id="btnGetir" class="btn btn-success mb-3">🚀 Verileri Getir</button>
+
+    <div id="loading" style="display:none;">Yükleniyor...</div>
+
+    <table class="table table-bordered table-hover" id="tablo" style="display:none;">
+        <thead class="table-dark">
+            <tr>
+                <th>Antrenör Adı</th>
+                <th>Uzmanlık Alanı</th>
+                <th>Toplam Randevu Sayısı</th>
+            </tr>
+        </thead>
+        <tbody id="tabloGovdesi">
+            </tbody>
+    </table>
+</div>
+
+@section Scripts {
+        <script>
+            document.getElementById("btnGetir").addEventListener("click", function() {
+                // 1. Yükleniyor yazısını göster
+                document.getElementById("loading").style.display = "block";
+                document.getElementById("tablo").style.display = "none";
+
+                // 2. Bizim yazdığımız API'ye istek at (Fetch)
+                fetch('/api/Api/Antrenorler')
+                    .then(response => response.json()) // Gelen veriyi JSON'a çevir
+                    .then(data => {
+                        // 3. Veriyi tabloya doldur
+                        let html = "";
+                        data.forEach(item => {
+                            html += `<tr>
+                                        <td>${item.adSoyad}</td>
+                                        <td>${item.uzmanlikAlanlari}</td>
+                                        <td><span class="badge bg-info text-dark">${item.toplamRandevu}</span></td>
+                                     </tr>`;
+                        });
+
+                        document.getElementById("tabloGovdesi").innerHTML = html;
+
+                        // 4. Tabloyu göster, yükleniyor'u gizle
+                        document.getElementById("loading").style.display = "none";
+                        document.getElementById("tablo").style.display = "table";
+                    })
+                    .catch(error => {
+                        alert("API'den veri çekilemedi!");
+                        console.error(error);
+                    });
+            });
+        </script>
+}

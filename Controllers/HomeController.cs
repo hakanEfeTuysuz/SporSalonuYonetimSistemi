@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SporSalonuYonetimSistemi.Models;
 using System.Diagnostics;
@@ -28,5 +29,12 @@ namespace SporSalonuYonetimSistemi.Controllers
 		{
 			return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 		}
-	}
+
+        // Sadece Admin görebilir
+        [Authorize(Roles = "Admin")]
+        public IActionResult Rapor()
+        {
+            return View();
+        }
+    }
 }

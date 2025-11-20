@@ -33,12 +33,24 @@
     <li class="nav-item">
         <a class="nav-link text-dark" asp-area="" asp-controller="Antrenorler" asp-action="Index">Antrenörler</a>
     </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+        <li class="nav-item">
+            <a class="nav-link text-dark fw-bold" asp-controller="Home" asp-action="Rapor">📊 Raporlar</a>
+        </li>
+                        }
 
                         @if (User.IsInRole("Uye") || User.IsInRole("Admin"))
                         {
             <li class="nav-item">
                 <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Randevu" asp-action="Index">📅 Randevularım</a>
             </li>
+                        }
+                        @if (User.IsInRole("Uye"))
+                        {
+        <li class="nav-item">
+            <a class="nav-link text-primary fw-bold" asp-area="" asp-controller="YapayZeka" asp-action="Index">🤖 AI Danışman</a>
+        </li>
                         }
 </ul>
 

@@ -23,13 +23,17 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Antrenör Seçin</label>
-                            <select asp-for="AntrenorId" class="form-select" asp-items="ViewBag.AntrenorId"></select>
+                            <label asp-for="HizmetId" class="form-label fw-bold">Hizmet Seçin</label>
+                            <select asp-for="HizmetId" class="form-select" asp-items="ViewBag.HizmetId" id="HizmetId">
+                                <option value="">-- Hizmet Seçiniz --</option>
+                            </select>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Hizmet Seçin</label>
-                            <select asp-for="HizmetId" class="form-select" asp-items="ViewBag.HizmetId"></select>
+                            <label asp-for="AntrenorId" class="form-label fw-bold">Antrenör Seçin</label>
+                            <select asp-for="AntrenorId" class="form-select" id="AntrenorId">
+                                <option value="">Önce Hizmet Seçiniz</option>
+                            </select>
                         </div>
 
                         <div class="d-grid gap-2">
@@ -42,3 +46,46 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+        <script>
+            $(document).ready(function () {
+                // Hizmet değişince çalış
+                $("#HizmetId").change(function () {
+                    var hizmetId = $(this).val();
+
+                    // Antrenör kutusunu temizle
+                    $("#AntrenorId").empty();
+
+                    if (hizmetId) {
+                        $("#AntrenorId").append('<option value="">Yükleniyor...</option>');
+
+                        // Backend'e sor: "Bu hizmeti kimler veriyor?"
+                        $.ajax({
+                            url: '/Randevu/GetUygunAntrenorler',
+                            type: 'GET',
+                            data: { hizmetId: hizmetId },
+                            success: function (data) {
+                                $("#AntrenorId").empty();
+                                $("#AntrenorId").append('<option value="">-- Antrenör Seçiniz --</option>');
+
+                                if (data.length === 0) {
+                                    $("#AntrenorId").append('<option value="">Bu hizmeti veren hoca yok</option>');
+                                } else {
+                                    $.each(data, function (i, item) {
+                                        $("#AntrenorId").append('<option value="' + item.value + '">' + item.text + '</option>');
+                                    });
+                                }
+                            }
+                        });
+                    } else {
+                        $("#AntrenorId").append('<option value="">Önce Hizmet Seçiniz</option>');
+                    }
+                });
+            });
+        </script>
+}
