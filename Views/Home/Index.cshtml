@@ -1,8 +1,89 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Ana Sayfa";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-3 fw-bold">Sınırlarını Zorla!</h1>
+        <p class="lead fs-4 mb-4">En iyi ekipmanlar ve uzman antrenörler eşliğinde hedeflerine ulaş.</p>
+
+        @if (!User.Identity.IsAuthenticated)
+        {
+                <a class="btn btn-primary btn-lg px-5 py-3 fw-bold" href="/Identity/Account/Register">Hemen Üye Ol</a>
+        }
+        else
+        {
+                <a class="btn btn-success btn-lg px-5 py-3 fw-bold" asp-controller="Randevu" asp-action="Index">📅 Randevu Al</a>
+        }
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row text-center g-4">
+        <div class="col-md-4">
+            <div class="p-3">
+                <div class="icon-box">💪</div>
+                <h3 class="fw-bold">Uzman Kadro</h3>
+                <p class="text-muted">Alanında sertifikalı ve deneyimli antrenörlerle çalışın.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3">
+                <div class="icon-box">🏋️</div>
+                <h3 class="fw-bold">Modern Ekipman</h3>
+                <p class="text-muted">Son teknoloji fitness ve kardiyo ekipmanları hizmetinizde.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3">
+                <div class="icon-box">🤖</div>
+                <h3 class="fw-bold">AI Desteği</h3>
+                <p class="text-muted">Yapay zeka ile vücut analizi yapın ve size özel tavsiyeler alın.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <h2 class="text-center fw-bold mb-4">Popüler Hizmetlerimiz</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-card">
+                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="card-img-top" alt="Fitness" style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">Fitness & Vücut Geliştirme</h5>
+                    <p class="card-text">Kas kütlenizi artırın ve güçlenin. Serbest ağırlık ve makinelerle tam donanımlı alan.</p>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-controller="Hizmetler" asp-action="Index" class="btn btn-outline-primary w-100">İncele</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-card">
+                <img src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="card-img-top" alt="Yoga" style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">Yoga & Pilates</h5>
+                    <p class="card-text">Esnekliğinizi artırın, zihninizi dinlendirin. Grup derslerimizle motive olun.</p>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-controller="Hizmetler" asp-action="Index" class="btn btn-outline-primary w-100">İncele</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-card">
+                <img src="https://plus.unsplash.com/premium_photo-1683121366070-5ceb7e007a97?q=80&w=2070&auto=format&fit=crop" class="card-img-top" alt="AI" style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">Yapay Zeka Koçluğu</h5>
+                    <p class="card-text">Hangi sporu yapmalısın? Beslenme tavsiyesi mi lazım? AI asistanımıza sor.</p>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-controller="YapayZeka" asp-action="Index" class="btn btn-outline-success w-100">✨ Tavsiye Al</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SporSalonuYonetimSistemi.Data;
@@ -6,8 +10,7 @@ using SporSalonuYonetimSistemi.Models;
 
 namespace SporSalonuYonetimSistemi.Controllers
 {
-    // DÜZELTME 1: Sadece [Authorize] yaptık. Böylece Üyeler de girebilir.
-    [Authorize]
+    [Authorize] // Üyeler listeyi görebilsin
     public class AntrenorlerController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -17,13 +20,11 @@ namespace SporSalonuYonetimSistemi.Controllers
             _context = context;
         }
 
-        // Herkes Listeyi Görebilir
         public async Task<IActionResult> Index()
         {
             return View(await _context.Antrenorler.ToListAsync());
         }
 
-        // Herkes Detayları Görebilir
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -32,7 +33,7 @@ namespace SporSalonuYonetimSistemi.Controllers
             return View(antrenor);
         }
 
-        // DÜZELTME 2: Ekleme işlemini SADECE ADMIN yapabilir
+        // --- CREATE ---
         [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
@@ -43,7 +44,8 @@ namespace SporSalonuYonetimSistemi.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("AntrenorId,Ad,Soyad,UzmanlikAlanlari,FotografUrl")] Antrenor antrenor, int[] selectedHizmetler)
+        // GÜNCELLENDİ: Bind içine CalismaBaslangic ve CalismaBitis EKLENDİ
+        public async Task<IActionResult> Create([Bind("AntrenorId,Ad,Soyad,UzmanlikAlanlari,FotografUrl,CalismaBaslangic,CalismaBitis")] Antrenor antrenor, int[] selectedHizmetler)
         {
             if (ModelState.IsValid)
             {
@@ -64,7 +66,7 @@ namespace SporSalonuYonetimSistemi.Controllers
             return View(antrenor);
         }
 
-        // DÜZELTME 3: Düzenleme işlemini SADECE ADMIN yapabilir
+        // --- EDIT ---
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -82,7 +84,8 @@ namespace SporSalonuYonetimSistemi.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("AntrenorId,Ad,Soyad,UzmanlikAlanlari,FotografUrl")] Antrenor antrenor, int[] selectedHizmetler)
+        // GÜNCELLENDİ: Bind içine CalismaBaslangic ve CalismaBitis EKLENDİ
+        public async Task<IActionResult> Edit(int id, [Bind("AntrenorId,Ad,Soyad,UzmanlikAlanlari,FotografUrl,CalismaBaslangic,CalismaBitis")] Antrenor antrenor, int[] selectedHizmetler)
         {
             if (id != antrenor.AntrenorId) return NotFound();
 
@@ -119,7 +122,6 @@ namespace SporSalonuYonetimSistemi.Controllers
             return View(antrenor);
         }
 
-        // DÜZELTME 4: Silme işlemini SADECE ADMIN yapabilir
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -129,13 +131,31 @@ namespace SporSalonuYonetimSistemi.Controllers
             return View(antrenor);
         }
 
+        // POST: Antrenorler/Delete/5
         [Authorize(Roles = "Admin")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var antrenor = await _context.Antrenorler.FindAsync(id);
-            if (antrenor != null) _context.Antrenorler.Remove(antrenor);
+            if (antrenor == null)
+            {
+                return NotFound();
+            }
+
+            // --- GÜVENLİK KONTROLÜ BAŞLANGIÇ ---
+            // Bu hocaya ait herhangi bir randevu var mı?
+            bool randevusuVarMi = await _context.Randevular.AnyAsync(r => r.AntrenorId == id);
+
+            if (randevusuVarMi)
+            {
+                // Hata mesajı oluştur ve sayfayı tekrar göster (SİLME!)
+                ViewBag.ErrorMessage = "⛔ BU ANTRENÖR SİLİNEMEZ! Çünkü sisteme kayıtlı randevuları bulunmaktadır. Önce randevuları silmelisiniz.";
+                return View("Delete", antrenor);
+            }
+            // --- GÜVENLİK KONTROLÜ BİTİŞ ---
+
+            _context.Antrenorler.Remove(antrenor);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

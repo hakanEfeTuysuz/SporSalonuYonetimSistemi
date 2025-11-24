@@ -142,17 +142,29 @@ namespace SporSalonuYonetimSistemi.Controllers
         }
 
         // POST: Hizmetler/Delete/5
+        [Authorize(Roles = "Admin")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var hizmet = await _context.Hizmetler.FindAsync(id);
-            if (hizmet != null)
+            if (hizmet == null)
             {
-                _context.Hizmetler.Remove(hizmet);
+                return NotFound();
             }
 
+            // --- GÜVENLİK KONTROLÜ BAŞLANGIÇ ---
+            // Bu hizmete ait randevu var mı?
+            bool randevusuVarMi = await _context.Randevular.AnyAsync(r => r.HizmetId == id);
+
+            if (randevusuVarMi)
+            {
+                ViewBag.ErrorMessage = "⛔ BU HİZMET SİLİNEMEZ! Çünkü bu hizmete ait kayıtlı randevular bulunmaktadır.";
+                return View("Delete", hizmet);
+            }
+            // --- GÜVENLİK KONTROLÜ BİTİŞ ---
+
+            _context.Hizmetler.Remove(hizmet);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

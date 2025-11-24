@@ -21,6 +21,9 @@
                 <th>Tarih</th>
                 <th>Antrenör</th>
                 <th>Hizmet</th>
+                <th>Süre</th>
+                <th>Ücret</th>
+
                 @if (isAdmin)
                 {
                     <th>Üye (Öğrenci)</th>
@@ -39,6 +42,9 @@
                         <td>@item.RandevuTarihi.ToString("dd.MM.yyyy HH:mm")</td>
                         <td>@item.Antrenor?.Ad @item.Antrenor?.Soyad</td>
                         <td>@item.Hizmet?.Ad</td>
+
+                        <td>@(item.Hizmet?.Sure) dk</td>
+                        <td>@(item.Hizmet?.Ucret) TL</td>
 
                     @if (isAdmin)
                     {

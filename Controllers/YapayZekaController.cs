@@ -13,7 +13,7 @@ namespace SporSalonuYonetimSistemi.Controllers
         private const string ApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
         // DİKKAT: Buraya API Key'ini yapıştırmayı unutma!
-        private const string ApiKey = "AIzaSyBw5N36Msa2K_xFmIgHa2n-stV-U4cuTUY";
+        private const string ApiKey = "";
 
         [HttpGet]
         public IActionResult Index()

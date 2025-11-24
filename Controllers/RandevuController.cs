@@ -51,7 +51,7 @@ namespace SporSalonuYonetimSistemi.Controllers
             return View();
         }
 
-        // 3. Randevuyu Kaydetme (GÜNCELLENDİ: Tarih Kontrolü Eklendi)
+        // 3. Randevuyu Kaydetme (TAM GÜVENLİK KONTROLLÜ)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Olustur([Bind("RandevuTarihi,AntrenorId,HizmetId")] Randevu randevu)
@@ -59,49 +59,69 @@ namespace SporSalonuYonetimSistemi.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             randevu.UyeId = userId;
             randevu.OnaylandiMi = false;
-            // --- MESAİ SAATİ KONTROLÜ ---
-            // Sabah 09:00'dan önce veya Akşam 22:00'den sonraya izin verme
-            if (randevu.RandevuTarihi.Hour < 9 || randevu.RandevuTarihi.Hour >= 22)
-            {
-                ModelState.AddModelError("RandevuTarihi", "Spor salonumuz 09:00 - 22:00 saatleri arasında hizmet vermektedir.");
-                DropdownlariDoldur(randevu);
-                return View(randevu);
-            }
 
-            // --- YENİ EKLENEN TARİH KONTROLÜ ---
-            // Eğer tarih seçilmediyse (0001) veya geçmiş bir tarihse hata ver
+            // KONTROL 1: Tarih Geçmişte mi?
             if (randevu.RandevuTarihi <= DateTime.Now)
             {
                 ModelState.AddModelError("RandevuTarihi", "Lütfen bugünden ileri bir tarih ve saat seçiniz.");
                 DropdownlariDoldur(randevu);
                 return View(randevu);
             }
-            // -----------------------------------
 
+            // Bilgileri Çek
             var secilenHizmet = await _context.Hizmetler.FindAsync(randevu.HizmetId);
-            if (secilenHizmet == null)
+            var secilenAntrenor = await _context.Antrenorler.FindAsync(randevu.AntrenorId);
+
+            if (secilenHizmet == null || secilenAntrenor == null)
             {
-                ModelState.AddModelError("", "Lütfen geçerli bir hizmet seçiniz.");
+                ModelState.AddModelError("", "Hizmet veya Antrenör bulunamadı.");
                 DropdownlariDoldur(randevu);
                 return View(randevu);
             }
 
-            // Çakışma Kontrolü
+            // Başlangıç ve Bitiş Hesapla
             var yeniBaslangic = randevu.RandevuTarihi;
             var yeniBitis = yeniBaslangic.AddMinutes(secilenHizmet.Sure);
 
-            var cakismaVarMi = await _context.Randevular
-                .Include(r => r.Hizmet)
-                .Where(r => r.AntrenorId == randevu.AntrenorId && r.RandevuTarihi.Date == yeniBaslangic.Date)
-                .AnyAsync(r => yeniBaslangic < r.RandevuTarihi.AddMinutes(r.Hizmet.Sure) && yeniBitis > r.RandevuTarihi);
-
-            if (cakismaVarMi)
+            // KONTROL 2: SALON SAATLERİ (09:00 - 22:00)
+            if (yeniBaslangic.Hour < 9 || yeniBitis.Hour >= 22 || (yeniBitis.Hour == 22 && yeniBitis.Minute > 0))
             {
-                ModelState.AddModelError("", $"Seçilen antrenör bu saat aralığında ({secilenHizmet.Sure} dk) müsait değil.");
+                ModelState.AddModelError("RandevuTarihi", "Spor salonumuz sadece 09:00 - 22:00 saatleri arasında açıktır.");
                 DropdownlariDoldur(randevu);
                 return View(randevu);
             }
 
+            // KONTROL 3: ANTRENÖR MESAİ SAATLERİ
+            TimeSpan baslangicSaati = yeniBaslangic.TimeOfDay;
+            TimeSpan bitisSaati = yeniBitis.TimeOfDay;
+
+            if (baslangicSaati < secilenAntrenor.CalismaBaslangic ||
+                bitisSaati > secilenAntrenor.CalismaBitis)
+            {
+                string bas = secilenAntrenor.CalismaBaslangic.ToString(@"hh\:mm");
+                string bit = secilenAntrenor.CalismaBitis.ToString(@"hh\:mm");
+                ModelState.AddModelError("", $"⛔ Bu antrenör sadece {bas} ile {bit} saatleri arasında çalışmaktadır.");
+                DropdownlariDoldur(randevu);
+                return View(randevu);
+            }
+
+            // KONTROL 4: ÇAKIŞMA (DOLULUK) KONTROLÜ
+            var cakismaVarMi = await _context.Randevular
+                .Include(r => r.Hizmet)
+                .Where(r => r.AntrenorId == randevu.AntrenorId && r.RandevuTarihi.Date == yeniBaslangic.Date)
+                .AnyAsync(r =>
+                    yeniBaslangic < r.RandevuTarihi.AddMinutes(r.Hizmet.Sure) &&
+                    yeniBitis > r.RandevuTarihi
+                );
+
+            if (cakismaVarMi)
+            {
+                ModelState.AddModelError("", "⚠️ Seçtiğiniz antrenörün bu saatte başka bir randevusu var (Dolu).");
+                DropdownlariDoldur(randevu);
+                return View(randevu);
+            }
+
+            // KAYDET
             _context.Add(randevu);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -122,7 +142,7 @@ namespace SporSalonuYonetimSistemi.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 5. YENİ EKLENEN: Admin Reddetme (Silme) Metodu
+        // 5. Admin Reddetme
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -131,7 +151,7 @@ namespace SporSalonuYonetimSistemi.Controllers
             var randevu = await _context.Randevular.FindAsync(id);
             if (randevu != null)
             {
-                _context.Randevular.Remove(randevu); // Randevuyü tamamen siler
+                _context.Randevular.Remove(randevu);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
@@ -142,7 +162,9 @@ namespace SporSalonuYonetimSistemi.Controllers
             ViewData["AntrenorId"] = new SelectList(_context.Antrenorler, "AntrenorId", "Ad", randevu.AntrenorId);
             ViewData["HizmetId"] = new SelectList(_context.Hizmetler, "HizmetId", "Ad", randevu.HizmetId);
         }
-        // --- YENİ EKLENEN: AJAX İÇİN FİLTRELEME METODU ---
+
+        // AJAX Filtreleme
+        // --- GÜNCELLENEN: AJAX İÇİN FİLTRELEME METODU (SAATLER DAHİL) ---
         [HttpGet]
         public async Task<IActionResult> GetUygunAntrenorler(int hizmetId)
         {
@@ -152,14 +174,20 @@ namespace SporSalonuYonetimSistemi.Controllers
                 .Select(ah => ah.AntrenorId)
                 .ToListAsync();
 
-            // 2. O hocaların isimlerini getir
-            var antrenorler = await _context.Antrenorler
+            // 2. O hocaları veritabanından çek (Önce veriyi hafızaya alıyoruz)
+            var antrenorlerListesi = await _context.Antrenorler
                 .Where(a => uygunIdler.Contains(a.AntrenorId))
-                .Select(a => new { value = a.AntrenorId, text = a.Ad + " " + a.Soyad })
                 .ToListAsync();
 
-            return Json(antrenorler);
-        }
+            // 3. İsimleri ve SAATLERİ formatlayıp gönder
+            // Örnek Çıktı: "Ahmet Yılmaz 🕒 (09:00 - 17:00)"
+            var sonuc = antrenorlerListesi.Select(a => new
+            {
+                value = a.AntrenorId,
+                text = $"{a.Ad} {a.Soyad} 🕒 ({a.CalismaBaslangic:hh\\:mm} - {a.CalismaBitis:hh\\:mm})"
+            });
 
+            return Json(sonuc);
+        }
     }
 }

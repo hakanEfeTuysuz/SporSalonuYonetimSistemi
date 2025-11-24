@@ -5,6 +5,12 @@
 }
 
 <h1>Delete</h1>
+@if (ViewBag.ErrorMessage != null)
+{
+        <div class="alert alert-danger text-center fw-bold">
+        @ViewBag.ErrorMessage
+        </div>
+}
 
 <h3>Are you sure you want to delete this?</h3>
 <div>
