@@ -51,7 +51,7 @@ namespace SporSalonuYonetimSistemi.Controllers
             return View();
         }
 
-        // 3. Randevuyu Kaydetme (TAM GÜVENLİK KONTROLLÜ)
+        // 3. Randevuyu Kaydetme (GÜNCELLENMİŞ VE DÜZELTİLMİŞ)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Olustur([Bind("RandevuTarihi,AntrenorId,HizmetId")] Randevu randevu)
@@ -60,7 +60,7 @@ namespace SporSalonuYonetimSistemi.Controllers
             randevu.UyeId = userId;
             randevu.OnaylandiMi = false;
 
-            // KONTROL 1: Tarih Geçmişte mi?
+            // 1. GEÇMİŞ TARİH KONTROLÜ
             if (randevu.RandevuTarihi <= DateTime.Now)
             {
                 ModelState.AddModelError("RandevuTarihi", "Lütfen bugünden ileri bir tarih ve saat seçiniz.");
@@ -68,7 +68,6 @@ namespace SporSalonuYonetimSistemi.Controllers
                 return View(randevu);
             }
 
-            // Bilgileri Çek
             var secilenHizmet = await _context.Hizmetler.FindAsync(randevu.HizmetId);
             var secilenAntrenor = await _context.Antrenorler.FindAsync(randevu.AntrenorId);
 
@@ -79,39 +78,43 @@ namespace SporSalonuYonetimSistemi.Controllers
                 return View(randevu);
             }
 
-            // Başlangıç ve Bitiş Hesapla
-            var yeniBaslangic = randevu.RandevuTarihi;
-            var yeniBitis = yeniBaslangic.AddMinutes(secilenHizmet.Sure);
+            // Randevu Zamanlarını Hesapla
+            var randevuBaslangic = randevu.RandevuTarihi;
+            var randevuBitis = randevuBaslangic.AddMinutes(secilenHizmet.Sure);
 
-            // KONTROL 2: SALON SAATLERİ (09:00 - 22:00)
-            if (yeniBaslangic.Hour < 9 || yeniBitis.Hour >= 22 || (yeniBitis.Hour == 22 && yeniBitis.Minute > 0))
+            // --- 2. SALON SAATLERİ KONTROLÜ (KESİN ÇÖZÜM) ---
+            // Randevunun alındığı günün sabah 09:00'ı ve akşam 22:00'ını tam tarih olarak belirliyoruz.
+            DateTime salonAcilis = randevuBaslangic.Date.AddHours(9);  // Örn: 28.11.2025 09:00:00
+            DateTime salonKapanis = randevuBaslangic.Date.AddHours(22); // Örn: 28.11.2025 22:00:00
+
+            // Eğer başlangıç açılıştan önceyse VEYA bitiş kapanıştan sonraysa
+            if (randevuBaslangic < salonAcilis || randevuBitis > salonKapanis)
             {
-                ModelState.AddModelError("RandevuTarihi", "Spor salonumuz sadece 09:00 - 22:00 saatleri arasında açıktır.");
+                ModelState.AddModelError("RandevuTarihi", $"Spor salonumuz 09:00 - 22:00 saatleri arasında açıktır. Seçtiğiniz hizmet {secilenHizmet.Sure} dakika sürdüğü için kapanış saatini geçmektedir.");
                 DropdownlariDoldur(randevu);
                 return View(randevu);
             }
 
-            // KONTROL 3: ANTRENÖR MESAİ SAATLERİ
-            TimeSpan baslangicSaati = yeniBaslangic.TimeOfDay;
-            TimeSpan bitisSaati = yeniBitis.TimeOfDay;
-
-            if (baslangicSaati < secilenAntrenor.CalismaBaslangic ||
-                bitisSaati > secilenAntrenor.CalismaBitis)
+            // --- 3. ANTRENÖR MESAİ SAATLERİ KONTROLÜ ---
+            // Sadece saat kısmını (TimeOfDay) karşılaştırıyoruz
+            if (randevuBaslangic.TimeOfDay < secilenAntrenor.CalismaBaslangic ||
+                randevuBitis.TimeOfDay > secilenAntrenor.CalismaBitis)
             {
                 string bas = secilenAntrenor.CalismaBaslangic.ToString(@"hh\:mm");
                 string bit = secilenAntrenor.CalismaBitis.ToString(@"hh\:mm");
+
                 ModelState.AddModelError("", $"⛔ Bu antrenör sadece {bas} ile {bit} saatleri arasında çalışmaktadır.");
                 DropdownlariDoldur(randevu);
                 return View(randevu);
             }
 
-            // KONTROL 4: ÇAKIŞMA (DOLULUK) KONTROLÜ
+            // --- 4. ÇAKIŞMA (DOLULUK) KONTROLÜ ---
             var cakismaVarMi = await _context.Randevular
                 .Include(r => r.Hizmet)
-                .Where(r => r.AntrenorId == randevu.AntrenorId && r.RandevuTarihi.Date == yeniBaslangic.Date)
+                .Where(r => r.AntrenorId == randevu.AntrenorId && r.RandevuTarihi.Date == randevuBaslangic.Date)
                 .AnyAsync(r =>
-                    yeniBaslangic < r.RandevuTarihi.AddMinutes(r.Hizmet.Sure) &&
-                    yeniBitis > r.RandevuTarihi
+                    randevuBaslangic < r.RandevuTarihi.AddMinutes(r.Hizmet.Sure) &&
+                    randevuBitis > r.RandevuTarihi
                 );
 
             if (cakismaVarMi)
@@ -164,23 +167,18 @@ namespace SporSalonuYonetimSistemi.Controllers
         }
 
         // AJAX Filtreleme
-        // --- GÜNCELLENEN: AJAX İÇİN FİLTRELEME METODU (SAATLER DAHİL) ---
         [HttpGet]
         public async Task<IActionResult> GetUygunAntrenorler(int hizmetId)
         {
-            // 1. Bu hizmeti verebilen hocaların ID'lerini bul
             var uygunIdler = await _context.AntrenorHizmetleri
                 .Where(ah => ah.HizmetId == hizmetId)
                 .Select(ah => ah.AntrenorId)
                 .ToListAsync();
 
-            // 2. O hocaları veritabanından çek (Önce veriyi hafızaya alıyoruz)
             var antrenorlerListesi = await _context.Antrenorler
                 .Where(a => uygunIdler.Contains(a.AntrenorId))
                 .ToListAsync();
 
-            // 3. İsimleri ve SAATLERİ formatlayıp gönder
-            // Örnek Çıktı: "Ahmet Yılmaz 🕒 (09:00 - 17:00)"
             var sonuc = antrenorlerListesi.Select(a => new
             {
                 value = a.AntrenorId,
