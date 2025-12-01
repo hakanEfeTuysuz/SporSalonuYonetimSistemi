@@ -2,50 +2,71 @@
 
 @{
     ViewData["Title"] = "Hizmetler";
-    // Admin mi diye kontrol ediyoruz
     bool isAdmin = User.IsInRole("Admin");
 }
 
-<div class="container mt-4">
-    <h1>Hizmetlerimiz</h1>
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Hizmet Paketleri</h1>
+        <p class="lead text-muted">Sizin için en uygun planı seçin ve hemen başlayın.</p>
 
-    @if (isAdmin)
-    {
-            <p>
-                <a asp-action="Create" class="btn btn-primary">Yeni Hizmet Ekle</a>
-            </p>
-    }
+        @if (isAdmin)
+        {
+                <a asp-action="Create" class="btn btn-primary btn-lg mt-3 shadow-sm rounded-pill">
+                    ➕ Yeni Hizmet Ekle
+                </a>
+        }
+    </div>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>@Html.DisplayNameFor(model => model.Ad)</th>
-                <th>@Html.DisplayNameFor(model => model.Sure) (Dk)</th>
-                <th>@Html.DisplayNameFor(model => model.Ucret) (TL)</th>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var item in Model)
+        {
+                <div class="col">
+                    <div class="card h-100 border-0 shadow hover-card" style="border-top: 5px solid #0d6efd !important;">
 
-                @if (isAdmin)
-                {
-                        <th>İşlemler</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                    <tr>
-                        <td>@Html.DisplayFor(modelItem => item.Ad)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Sure)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Ucret)</td>
+                        <div class="card-body text-center p-4 d-flex flex-column">
+
+
+                            <h4 class="card-title fw-bold mb-3">@item.Ad</h4>
+
+                            <div class="d-flex justify-content-center align-items-center mb-4 bg-light py-2 rounded-3">
+                                <span class="display-6 fw-bold text-dark">@item.Ucret.ToString("N0")</span>
+                                <span class="fs-5 text-muted ms-1">₺</span>
+                            </div>
+
+                            <ul class="list-unstyled text-muted mb-4 flex-grow-1">
+                                <li class="mb-2 border-bottom pb-2">⏱️ Süre: <strong>@item.Sure dk</strong></li>
+                                <li class="mb-2 border-bottom pb-2">✅ Uzman Eğitmen Desteği</li>
+                                <li class="mb-2 border-bottom pb-2">🚿 Soyunma Odası & Duş</li>
+                            </ul>
+
+                        @if (User.IsInRole("Uye"))
+                        {
+                                    <div class="mt-auto">
+                                        <a asp-controller="Randevu" asp-action="Index" class="btn btn-primary w-100 py-2 fw-bold">Hemen Randevu Al</a>
+                                    </div>
+                        }
+                        </div>
 
                     @if (isAdmin)
                     {
-                                <td>
-                                    <a asp-action="Edit" asp-route-id="@item.HizmetId" class="btn btn-sm btn-warning">Düzenle</a> |
-                                    <a asp-action="Delete" asp-route-id="@item.HizmetId" class="btn btn-sm btn-danger">Sil</a>
-                                </td>
+                                <div class="card-footer bg-white border-0 text-center pb-3">
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Edit" asp-route-id="@item.HizmetId" class="btn btn-sm btn-outline-warning">Düzenle</a>
+                                        <a asp-action="Details" asp-route-id="@item.HizmetId" class="btn btn-sm btn-outline-info">Detay</a>
+                                        <a asp-action="Delete" asp-route-id="@item.HizmetId" class="btn btn-sm btn-outline-danger">Sil</a>
+                                    </div>
+                                </div>
                     }
-                    </tr>
-            }
-        </tbody>
-    </table>
+                    </div>
+                </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+            <div class="alert alert-warning text-center mt-5">
+                Henüz eklenmiş bir hizmet bulunmamaktadır.
+            </div>
+    }
 </div>
