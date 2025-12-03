@@ -2,50 +2,67 @@
 
 @{
     ViewData["Title"] = "Antrenörler";
-    // Admin mi diye kontrol ediyoruz
     bool isAdmin = User.IsInRole("Admin");
 }
 
-<div class="container mt-4">
-    <h1>Antrenör Kadromuz</h1>
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Eğitmen Kadromuz</h1>
+        <p class="lead text-muted">Hedeflerinize ulaşmanız için yanınızdayız.</p>
 
-    @if (isAdmin)
+        @if (isAdmin)
+        {
+                <a asp-action="Create" class="btn btn-primary btn-lg mt-3 shadow-sm rounded-pill">
+                    ➕ Yeni Antrenör Ekle
+                </a>
+        }
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var item in Model)
+        {
+                <div class="col">
+                    <div class="card h-100 border-0 shadow hover-card text-center">
+
+                        <div class="card-header bg-transparent border-0 pt-4">
+                            <img src="https://ui-avatars.com/api/?name=@item.Ad+@item.Soyad&background=random&color=fff&size=128&bold=true" 
+                                 class="rounded-circle shadow-sm" alt="@item.Ad @item.Soyad" width="100" height="100">
+                        </div>
+
+                        <div class="card-body">
+                            <h4 class="card-title fw-bold mb-1">@item.Ad @item.Soyad</h4>
+
+                            <p class="text-primary fw-bold mb-3">@item.UzmanlikAlanlari</p>
+
+                            <div class="mb-3">
+                                <span class="badge bg-light text-dark border">
+                                    🕒 @item.CalismaBaslangic.ToString(@"hh\:mm") - @item.CalismaBitis.ToString(@"hh\:mm")
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-0 pb-4">
+                        @if (isAdmin)
+                        {
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Edit" asp-route-id="@item.AntrenorId" class="btn btn-sm btn-outline-warning">Düzenle</a>
+                                        <a asp-action="Delete" asp-route-id="@item.AntrenorId" class="btn btn-sm btn-outline-danger">Sil</a>
+                                    </div>
+                        }
+                        else
+                        {
+                                    <a asp-controller="Randevu" asp-action="Index" class="btn btn-outline-primary w-75 rounded-pill fw-bold">Randevu Al</a>
+                        }
+                        </div>
+                    </div>
+                </div>
+        }
+    </div>
+
+    @if (!Model.Any())
     {
-            <p>
-                <a asp-action="Create" class="btn btn-primary">Yeni Antrenör Ekle</a>
-            </p>
+            <div class="alert alert-warning text-center mt-5">
+                Henüz sisteme kayıtlı antrenör bulunmamaktadır.
+            </div>
     }
-
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>@Html.DisplayNameFor(model => model.Ad)</th>
-                <th>@Html.DisplayNameFor(model => model.Soyad)</th>
-                <th>@Html.DisplayNameFor(model => model.UzmanlikAlanlari)</th>
-
-                @if (isAdmin)
-                {
-                        <th>İşlemler</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                    <tr>
-                        <td>@Html.DisplayFor(modelItem => item.Ad)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Soyad)</td>
-                        <td>@Html.DisplayFor(modelItem => item.UzmanlikAlanlari)</td>
-
-                    @if (isAdmin)
-                    {
-                                <td>
-                                    <a asp-action="Edit" asp-route-id="@item.AntrenorId" class="btn btn-sm btn-warning">Düzenle</a> |
-                                    <a asp-action="Delete" asp-route-id="@item.AntrenorId" class="btn btn-sm btn-danger">Sil</a>
-                                </td>
-                    }
-                    </tr>
-            }
-        </tbody>
-    </table>
 </div>
